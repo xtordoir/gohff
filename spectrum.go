@@ -2,8 +2,8 @@ package gohff
 
 // Spectrum is a range of Overshoots
 type Spectrum struct {
-	Scales     []float64
-	Overshoots []Overshoot
+	Scales     []float64   `json:"scales"`
+	Overshoots []Overshoot `json:"overshoots"`
 }
 
 // Update all Overshoots Scales

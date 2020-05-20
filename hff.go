@@ -2,6 +2,7 @@ package gohff
 
 import (
   "math"
+  "fmt"
 )
 /*
 case class Overshoot(instrument: String, scale: Double, direction: Int, prevExt: Double, ext: Double,
@@ -10,12 +11,12 @@ case class Overshoot(instrument: String, scale: Double, direction: Int, prevExt:
 
 // Overshoot gives the internal state of the Overshoot: DirectionChange and current price and Extremum of current move
 type Overshoot struct {
-  Instrument string
-  Scale float64
-  Direction int
-  StartExtremum float64
-  PeakExtremum float64
-  Current float64
+  Instrument string          `json:"instrument"`
+  Scale float64              `json:"scale"`
+  Direction int              `json:"direction"`
+  StartExtremum float64 `json:"start"`
+  PeakExtremum float64 `json:"peak"`
+  Current float64 `json:"current"`
 }
 
 // MaxOS returns the maximal Overshoot (Total Movement to be precise)
@@ -50,4 +51,112 @@ func (ovs *Overshoot) Update(x float64) Overshoot {
     }
   new.Current = x
   return new
+}
+
+// OHLC contains a single simple candle data OHLC
+type OHLC struct {
+  O float64
+  H float64
+  L float64
+  C float64
+}
+
+// InitStateWithCandles tries to find direction and extremum from candle data
+func (ovs *Overshoot) InitStateWithCandles(x []OHLC) error {
+  i := len(x) - 1
+  // we start with the latest available price as max and min
+  low, high := x[i].C, x[i].C
+  last := x[i].C
+  // direction is unknown, extremum is unknown
+  dir := 0
+  startExtremum := -1.0
+  peakExtremum := -1.0
+  prevReversal := -1.0
+  // first high or min farther than scale distance is defining a direction
+  for i >= 0 {
+    //fmt.Println(x[i])
+
+    // update high and low
+    if x[i].H > high {
+      high = x[i].H
+      dir = -1
+    }
+    if x[i].L < low {
+      low = x[i].L
+      dir++
+      if dir > 1 {dir = 1}
+    }
+    // test if a direction is found
+    // note that dow direction tends has precedence,
+    // hence the need to use short time frames to make sure ranges are always lower than
+    // the scale
+    if dir == -1 && 100*(low-high)/high/ovs.Scale < -1 {
+      dir = -1
+      startExtremum = high
+      peakExtremum  = low
+      high= low
+      low = high
+      //fmt.Println("found down direction")
+      //fmt.Println(x[i])
+      i--
+      break
+    }
+
+    if dir == 1 && 100*(high-low)/low/ovs.Scale > 1 {
+      dir = 1
+      startExtremum = low
+      peakExtremum  = high
+      high = low
+      low = high
+      //fmt.Println("found up direction")
+      //fmt.Println(x[i])
+      i--
+      break
+    }
+    i--
+  }
+  // Then next reversal determines amplitude
+  for i >= 0 && prevReversal <= 0 {
+    // update high and low
+    if dir == -1 {
+      if x[i].H > high {
+        high = x[i].H
+        low = x[i].O
+      } else if x[i].L < low {
+        low = x[i].L
+      }
+    }
+    if dir == 1 {
+      if x[i].L < low {
+        low = x[i].L
+        high = x[i].O
+      } else if x[i].H > high {
+        high = x[i].H
+      }
+    }
+
+    // if direction is up, we seek a
+    if dir == 1 && 100*(low - high)/high/ovs.Scale < -1.0 {
+      prevReversal = high
+      startExtremum = low
+      //fmt.Println("found reversal")
+      //fmt.Println(x[i])
+    }
+    if dir == -1 && 100*(high - low)/low/ovs.Scale > 1.0 {
+      prevReversal = low
+      startExtremum = high
+      //fmt.Println("found reversal direction")
+      //fmt.Println(x[i])
+    }
+    i--
+  }
+  if prevReversal <= 0 || dir == 0 {
+    return fmt.Errorf("No Overshoot DC found")
+  }
+  ovs.PeakExtremum = peakExtremum
+  //prevReversal
+  ovs.StartExtremum = startExtremum
+  ovs.Direction = dir
+  ovs.Current = last
+  return nil
 }
