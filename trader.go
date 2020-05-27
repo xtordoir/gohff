@@ -1,5 +1,7 @@
 package gohff
 
+import "math"
+
 // GearFunc is a function taking a price and computing a position change
 type GearFunc func(x float64) (g float64)
 
@@ -22,8 +24,17 @@ type TraderProcess struct {
 func (tp *TraderProcess) Increase(x float64) {
 	de := tp.GIncr(x)
 	e := tp.Exposure + de
-	a := (tp.PriceAverage*tp.Exposure + x*de) / e
+	a := (tp.PriceAverage*math.Abs(tp.Exposure) + x*math.Abs(de)) / math.Abs(e)
 	tp.Exposure += e
+	tp.PriceAverage = a
+}
+
+// IncreaseBy a number of units
+func (tp *TraderProcess) IncreaseBy(x float64, units float64) {
+	de := units
+	e := tp.Exposure + de
+	a := (tp.PriceAverage*math.Abs(tp.Exposure) + x*math.Abs(de)) / math.Abs(e)
+	tp.Exposure = e
 	tp.PriceAverage = a
 }
 
@@ -31,7 +42,17 @@ func (tp *TraderProcess) Increase(x float64) {
 func (tp *TraderProcess) Decrease(x float64) {
 	de := tp.GDecr(x)
 	e := tp.Exposure - de
-	pi := -de * (x/tp.PriceAverage - 1.0)
+	pi := de * (x/tp.PriceAverage - 1.0)
+
+	tp.Exposure = e
+	tp.CumProfit += pi
+}
+
+// DecreaseBy a number of Units
+func (tp *TraderProcess) DecreaseBy(x float64, units float64) {
+	de := units
+	e := tp.Exposure - de
+	pi := de * (x/tp.PriceAverage - 1.0)
 
 	tp.Exposure = e
 	tp.CumProfit += pi
@@ -39,5 +60,5 @@ func (tp *TraderProcess) Decrease(x float64) {
 
 // TotalProfit compute the Process total profit for a given exit price
 func (tp *TraderProcess) TotalProfit(x float64) float64 {
-	return tp.CumProfit - tp.Exposure*(x/tp.PriceAverage-1.0)
+	return tp.CumProfit + tp.Exposure*(x/tp.PriceAverage-1.0)
 }
