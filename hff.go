@@ -85,13 +85,13 @@ func (ovs *Overshoot) UpdateWithCandle(x OHLC) (Overshoot, Overshoot) {
 		new.PeakExtremum = x.L
 		new.Current = x.L
 		// Reversal From UP
-	} else if ovs.Direction == 1 && (cosLow*eDistLow < 0 || cosLow < 0.0) && math.Abs(eDistLow) > 1.0 {
+	} else if ovs.Direction == 1 && ((cosLow*eDistLow < 0 && math.Abs(eDistLow) > 1.0) || cosLow < 0.0) {
 		new.Direction = -new.Direction
 		new.StartExtremum = ovs.PeakExtremum
 		new.PeakExtremum = x.L
 		new.Current = x.L
 		// Reversel from DOWN
-	} else if ovs.Direction == -1 && (cosHigh*eDistHigh < 0 || cosHigh > 0.0) && math.Abs(eDistHigh) > 1.0 {
+	} else if ovs.Direction == -1 && ((cosHigh*eDistHigh < 0  && math.Abs(eDistHigh) > 1.0) || cosHigh > 0.0)) {
 		new.Direction = -new.Direction
 		new.StartExtremum = ovs.PeakExtremum
 		new.PeakExtremum = x.H
