@@ -75,7 +75,7 @@ func (ovs *Overshoot) UpdateWithCandle(x OHLC) (Overshoot, Overshoot) {
 	eDistLow := 100 * (x.L - ovs.PeakExtremum) / ovs.PeakExtremum / ovs.Scale
 	eDistHigh := 100 * (x.H - ovs.PeakExtremum) / ovs.PeakExtremum / ovs.Scale
 	//maxOS := ovs.MaxOS()
-
+	fmt.Printf("DEBUG: %.2f     %.2f    %.2f    %.2f\n", cosLow, cosHigh, eDistLow, eDistHigh)
 	// First check for direction extension UP
 	if ovs.Direction == 1 && eDistHigh > 0 {
 		new.PeakExtremum = x.H

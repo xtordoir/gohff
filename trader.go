@@ -8,51 +8,51 @@ type GearFunc func(x float64) (g float64)
 // TraderProcess is used to know a managed trade process state
 type TraderProcess struct {
 	// exposure
-	Exposure float64
+	Exposure int
 	// average price of position
 	PriceAverage float64
 	// cumulated profit (Estimated)
 	CumProfit float64
 	// cumulated profit (Actual)
 	ActualCumProfit float64
-	// G is the Exposure increase (decrease) function, it depends basically on transaction prices
-	GIncr GearFunc
-	GDecr GearFunc
+	//	// G is the Exposure increase (decrease) function, it depends basically on transaction prices
+	//	GIncr GearFunc
+	//	GDecr GearFunc
 }
 
-// Increase is used to increase the current position of the TraderProcess
-func (tp *TraderProcess) Increase(x float64) {
-	de := tp.GIncr(x)
-	e := tp.Exposure + de
-	a := (tp.PriceAverage*math.Abs(tp.Exposure) + x*math.Abs(de)) / math.Abs(e)
-	tp.Exposure += e
-	tp.PriceAverage = a
-}
+//// Increase is used to increase the current position of the TraderProcess
+//func (tp *TraderProcess) Increase(x int) {
+//	de := tp.GIncr(x)
+//	e := tp.Exposure + de
+//	a := (tp.PriceAverage*math.Abs(tp.Exposure) + x*math.Abs(de)) / math.Abs(e)
+//	tp.Exposure += e
+//	tp.PriceAverage = a
+//}
 
 // IncreaseBy a number of units
-func (tp *TraderProcess) IncreaseBy(x float64, units float64) {
+func (tp *TraderProcess) IncreaseBy(x float64, units int) {
 	de := units
 	e := tp.Exposure + de
-	a := (tp.PriceAverage*math.Abs(tp.Exposure) + x*math.Abs(de)) / math.Abs(e)
+	a := (tp.PriceAverage*math.Abs(float64(tp.Exposure)) + x*math.Abs(float64(de))) / math.Abs(float64(e))
 	tp.Exposure = e
 	tp.PriceAverage = a
 }
 
-// Decrease is used to Decrease the position on the TraderProcess
-func (tp *TraderProcess) Decrease(x float64) {
-	de := tp.GDecr(x)
-	e := tp.Exposure - de
-	pi := de * (x/tp.PriceAverage - 1.0)
-
-	tp.Exposure = e
-	tp.CumProfit += pi
-}
+//// Decrease is used to Decrease the position on the TraderProcess
+//func (tp *TraderProcess) Decrease(x float64) {
+//	de := tp.GDecr(x)
+//	e := tp.Exposure - de
+//	pi := de * (x/tp.PriceAverage - 1.0)
+//
+//	tp.Exposure = e
+//	tp.CumProfit += pi
+//}
 
 // DecreaseBy a number of Units
-func (tp *TraderProcess) DecreaseBy(x float64, units float64) {
+func (tp *TraderProcess) DecreaseBy(x float64, units int) {
 	de := units
 	e := tp.Exposure - de
-	pi := de * (x/tp.PriceAverage - 1.0)
+	pi := float64(de) * (x/tp.PriceAverage - 1.0)
 
 	tp.Exposure = e
 	tp.CumProfit += pi
@@ -60,5 +60,5 @@ func (tp *TraderProcess) DecreaseBy(x float64, units float64) {
 
 // TotalProfit compute the Process total profit for a given exit price
 func (tp *TraderProcess) TotalProfit(x float64) float64 {
-	return tp.CumProfit + tp.Exposure*(x/tp.PriceAverage-1.0)
+	return tp.CumProfit + float64(tp.Exposure)*(x/tp.PriceAverage-1.0)
 }
