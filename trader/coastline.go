@@ -61,7 +61,8 @@ func NewCoastlineTrade(v0 int, dir int, scale float64, ic int) *CoastlineTrade {
 }
 
 // Update function to update the trader with new price
-func (trade *CoastlineTrade) Update(price float64, init bool) (float64, error) {
+// returns true if the trade was changed
+func (trade *CoastlineTrade) Update(price float64, init bool) (bool, error) {
 
 	trader := trade.Trader
 	p := trade.Params
@@ -81,25 +82,27 @@ func (trade *CoastlineTrade) Update(price float64, init bool) (float64, error) {
 	if pl > p.Target {
 		fmt.Printf("Closing: Decrease Exposure by: %d\n", trader.Exposure)
 		trader.DecreaseBy(price, trader.Exposure)
-		return trader.CumProfit, nil
+		return true, nil
 	}
 	// if extention has jumped higher
-	// and this cross is at a different level than last one
-	if i > p.I && p.LastCrossI != i {
-		fmt.Printf("Trading: Increase Exposure by: %d\n", p.Dir*p.V0*(i-p.I))
-		trader.IncreaseBy(price, p.Dir*p.V0*(i-p.I))
+	// and this cross is at a higher level than last one
+	if i > p.I && i > p.LastCrossI {
+		fmt.Printf("Trading: Increase Exposure by: %d\n", p.Dir*p.V0*(i-p.LastCrossI))
+		trader.IncreaseBy(price, p.Dir*p.V0*(i-p.LastCrossI))
 		p.I = i
 		p.LastCrossI = i
-		return trader.CumProfit, nil
+		return true, nil
 	}
 	// if extension has jumped lower by at least one step
-	if i <= p.I-1 {
-		fmt.Printf("Trading: Decrease Exposure by: %d\n", p.Dir*p.V0*(p.I-i-1))
-		trader.DecreaseBy(price, p.Dir*p.V0*(p.I-i-1))
+	// and we are crossing 2 levels away from last increase
+	if i < p.I && i < p.LastCrossI-1 {
+		fmt.Printf("Trading: Decrease Exposure by: %d\n", p.Dir*p.V0*(p.LastCrossI-i-1))
+		trader.DecreaseBy(price, p.Dir*p.V0*(p.LastCrossI-i-1))
 		p.I = i
 		p.LastCrossI = i + 1 // we set the last cross level right above
-		return trader.CumProfit, nil
+		return true, nil
 	}
+	p.I = i
 	// else, leave state alone
-	return trader.TotalProfit(price), nil
+	return false, nil
 }
