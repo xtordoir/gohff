@@ -34,6 +34,10 @@ func (p *OSParameters) nextExposure(l float64, minFrac float64) (int, bool) {
 	if l*p.L < 0 {
 		return 0, true
 	}
+	// check if it is a stop loss
+	if math.Abs(l) > math.Abs(p.Lmax) {
+		return 0, true
+	}
 	// if it is not an extension of l
 	if math.Abs(l)-math.Abs(p.L) < minFrac {
 		return 0, false
@@ -88,15 +92,17 @@ func (trade *OvershootTrade) Update(price float64, l float64, init bool) (bool, 
 		p.L = l
 		p.X0 = price
 		p.L0 = l
+		// !!! Set the Lmax as distance from l0
+		p.Lmax = p.Lmax + p.L0
 	}
 
 	// compute the next state:
 	//i := p.nextI(price)
 	targetExposure, changed := p.nextExposure(l, 0.1)
 
-	// if PL is above target or reversal we must liquidate
+	// if PL is above target or reversal or Stop  we must liquidate
 	pl := trader.TotalProfit(price)
-	if pl > p.Target || l*p.L < 0 {
+	if pl > p.Target || l*p.L < 0 || math.Abs(l) > math.Abs(p.Lmax) {
 		fmt.Printf("Closing: Decrease Exposure by: %d\n", trader.Exposure)
 		trader.DecreaseBy(price, trader.Exposure)
 		return true, nil

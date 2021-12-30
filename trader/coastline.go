@@ -77,9 +77,9 @@ func (trade *CoastlineTrade) Update(price float64, init bool) (bool, error) {
 	// compute the next state:
 	i := p.nextI(price)
 
-	// if PL is above target we must liquidate
+	// if PL is above target we must liquidate or i above maximum (stop loss)
 	pl := trader.TotalProfit(price)
-	if pl > p.Target {
+	if pl > p.Target || i > p.Ic {
 		fmt.Printf("Closing: Decrease Exposure by: %d\n", trader.Exposure)
 		trader.DecreaseBy(price, trader.Exposure)
 		return true, nil

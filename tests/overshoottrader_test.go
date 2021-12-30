@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/xtordoir/gohff/trader"
@@ -98,4 +99,21 @@ func TestOvershootAccumulation(t *testing.T) {
 		t.Errorf("I = 0 Trade Exposure is wrong at price %.4f: %d, want: %d.", price, trade.Trader.Exposure, 0)
 	}
 
+	price = 1.0
+	l = 2.5
+
+	trade = trader.NewOvershootTrade(1000, -1, 1.0, 3.6)
+	trade.Update(price, l, true)
+	fmt.Printf("%+v  %+v\n", trade.Params, trade.Trader)
+	if trade.Trader.Exposure != -1000 {
+		t.Errorf("Opened Trade Exposure is wrong at price %.4f: %d, want: %d.", price, trade.Trader.Exposure, -1000)
+	}
+
+	price = 1.037
+	l = 6.7
+	trade.Update(price, l, false)
+	fmt.Printf("%+v  %+v\n", trade.Params, trade.Trader)
+	if trade.Trader.Exposure != 0 {
+		t.Errorf("Trade Exposure is wrong at price %.4f: %d, want: %d.", price, trade.Trader.Exposure, 0)
+	}
 }
