@@ -42,14 +42,19 @@ func (ovs *Overshoot) Update(x float64) Overshoot {
 	eDist := 100 * (x - ovs.PeakExtremum) / ovs.PeakExtremum / ovs.Scale
 	maxOS := ovs.MaxOS()
 	// if reversal...
-	//fmt.Printf("COS: %.5f - EDIST: %.5f - MAXOS: %.5f", cos, eDist, maxOS)
+	// this is a "gentle" reversal less than one full Scale move in one update.
 	if cos*eDist < 0 && math.Abs(eDist) > 1.0 {
 		new.Direction = -new.Direction
 		new.StartExtremum = ovs.PeakExtremum
 		new.PeakExtremum = x
 		new.Current = x
 		return new
-	} else if math.Abs(cos) > math.Abs(maxOS) {
+	} else if maxOS*eDist < 0 && maxOS*cos <0 { // this is a large reversal,
+		new.Direction = -new.Direction
+		new.StartExtremum = ovs.PeakExtremum
+		new.PeakExtremum = x
+		new.Current = x
+	} else if math.Abs(cos) > math.Abs(maxOS) { // new extremum
 		new.PeakExtremum = x
 	}
 	new.Current = x
